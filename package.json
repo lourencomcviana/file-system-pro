@@ -1,0 +1,28 @@
+{
+  "name": "file-system-pro",
+  "version": "1.0.0",
+  "description": "file system with promises and paging control for glob querys and file readyng",
+  "main": "fsq.js",
+  "scripts": {
+    "test": "test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lourencomcviana/file-system-pro.git"
+  },
+  "keywords": [
+    "file-system",
+    "promise",
+    "glob"
+  ],
+  "author": "loureço matheus costa viana",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lourencomcviana/file-system-pro/issues"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "glob": "^7.1.2"
+  },
+  "homepage": "https://github.com/lourencomcviana/file-system-pro#readme"
+}
