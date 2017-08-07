@@ -4,36 +4,21 @@
   var glob = require("glob")
   var Promise = require("bluebird");
 
+  var FilePaging = require("./src/FilePaging");  
+  var Progress = require("./src/Progress");
+  var FileInfo = require("./src/FileInfo");
+
  
 
   module.exports = {
     readFile:readFile,
-    readFilesGlob:readFilesGlob,
+    readFiles:readFiles,
     writeFile:writeFile,
     writeFiles:writeFiles
    
   };
 
   var defaultEncoding='UTF-8';
-
-
-
-  function fileInfo(filePath){
-    let saida={filePathStr:filePath,
-      filePath:filePath.split(/[\\/]/),
-      directoryStr:undefined,
-      directory:undefined,
-      name:undefined,
-      file:undefined,
-      options:undefined
-    }
-    saida.directory=saida.filePath.slice(0,saida.filePath.length-1);
-
-    saida.directoryStr=saida.directory.join("/");
-    saida.name=saida.filePath[saida.filePath.length-1]
-    return saida;
-  }
-
   
   function readFile(filename,options){
     
@@ -41,7 +26,7 @@
       fs.readFile(filename,options, function (err, res){
         if (err) reject(err);
         else{ 
-          let info= fileInfo(filename)
+          let info= FileInfo(filename)
           info.encoding=encoding;
           info.options=options;
           info.file=res;
@@ -52,7 +37,7 @@
   }
 
   function writeDirRecursive(filename){
-    let info= fileInfo(filename);
+    let info= FileInfo(filename);
     
     var fullPath='.';
     for(var id in info.directory){
@@ -98,16 +83,20 @@
     return Promise.all(promisses);
   }
 
-  function readFilesGlob(globPath,options,progressCallback){
+  function readFiles(globPath,options,progressCallback){
+    fillOptions(
+      {
+        size:100,
+        format:undefined
+      },options)
 
     return new Promise(function (fulfill, reject){
       progress=new Progress(progressCallback,'lendo arquivos')
       glob(globPath, options, function (err, files) {
-        function FilePaging(files,options){
+
+        function FilePagingOld(files,options){
           
           let arr=[];
-          if(!options)options={}
-          if(!options.size)options.size=100
 
           arr.paging={
             size:options.size,
@@ -126,7 +115,7 @@
             arr.paging.files.concat(files);
           }
 
-          
+          console.log(arr)
           arr.next=function(){
             if(arr.paging.hasNext()){
               arr.paging.current++;
@@ -155,7 +144,7 @@
                         
             for(itens;itens<maxItens;itens++){
 
-              let filePackage=fileInfo(arr.paging.files[itens]);
+              let filePackage=FileInfo(arr.paging.files[itens]);
               filePackage.file=fs.readFileSync(arr.paging.files[itens]);
               let formatReturn;
               if(arr.paging.format) {
@@ -187,23 +176,9 @@
             }
             files=newFiles;
           }
-          if(files.length>0){
-            readPromisses=FilePaging(files,options);
-            return readPromisses;
-          }else{
-            progress.start(files.length);
-            for(var id in files){
-
-              readPromisses.push(readFile(files[id]).then(
-                function(data){
-                  progress.run();
-                  return data;
-              }));
-              
-            }
-            return Promise.all(readPromisses);
           
-          }
+          readPromisses=new FilePaging(files,options);
+          return readPromisses;
         }
         readAllFiles(files).then(function(data){
           fulfill(data);
@@ -213,82 +188,16 @@
     });
   }
 
-  function Progress(progress,description){
-    this.description=description;
-    this.total=0;
-    this.exec=0;
-    this.progress=progress;
-    this.state=0;
-    this.showStatistcs=false;
-    this.states=function(state){
-      let statesEnum= ['CREATED','STARTED','RUNNING','FINISHED','FINISHED BUT STILL RUNNING'];
-      if(!state)
-        return statesEnum;
-      else
-        return statesEnum[this.state];
-    }
-    this.time={
-      start:new Date().toISOString(),
-      first:undefined,
-      end:undefined
-    }
+ 
 
-    this.start=function(totalLength){
-      if(this.progress){
-        this.exec=0;
-        this.total=Number(totalLength);
-        
-        this.time.first=new Date().toISOString();
-        if(this.total==0 || !this.total){
-          this.state=3
-          this.time.end=new Date().toISOString();
-        }
-        else
-          this.state=1;
-        this.progress(this);
+  function fillOptions(model,source){
+    if(source && typeof source =='object'){
+      for(var id in model){
+        if(!source[id]) source[id]= model[id];
       }
+      return source;
     }
-
-    this.run=function(){
-      if(this.progress){
-        this.exec++; 
-        if(this.total==this.exec){
-          this.state=3;
-          this.time.end=new Date().toISOString();
-        }else if(this.total<this.exec){
-          this.state=4;
-        }
-        else{
-          this.state=2;
-        }
-        this.progress(this);
-      }
-    }
-
-    this.show=function(){
-      if(this.progress){
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
-
-        if(this.state) process.stdout.write(this.states(this.state)+' ')
-        if(this.description)  process.stdout.write(this.description+' ');
-        
-        process.stdout.write(this.exec+"/"+this.total);
-        if(this.state===3){
-          this.showEnd();
-        }
-      }
-    }
-    this.showEnd=function(){
-      if(this.progress){
-        if(this.showStatistcs){
-          process.stdout.write('\nstart: '+this.time.start)
-          process.stdout.write('\nfirst: '+this.time.first)
-          process.stdout.write('\nend:   '+this.time.end)
-        }
-        process.stdout.write('\n');
-      }
-    }
-
+    return model;
   }
+
 }());
