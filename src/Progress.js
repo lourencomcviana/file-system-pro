@@ -1,6 +1,6 @@
 (function(){
-module.exports=Progress;
-function Progress(progress,description){
+  module.exports=Progress;
+  function Progress(progress,description){
     this.description=description;
     this.total=0;
     this.exec=0;
@@ -52,31 +52,31 @@ function Progress(progress,description){
       }
     }
 
-    this.show=function(msg){
+    this.report=function(msg){
       if(!msg) msg=this.description
       if(this.progress){
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
-
-        if(this.state) process.stdout.write(this.states(this.state)+' ')
-        if(msg)  process.stdout.write(msg+' ');
         
-        process.stdout.write(this.exec+"/"+this.total);
+        let text='';
+        if(this.state) text+=(this.states(this.state)+' ')
+        if(msg)  text+=(msg+' ');
+        
+        text+=(this.exec+"/"+this.total);
         if(this.state===3){
-          this.showEnd();
+          text=reportEnd(text);
         }
+       
+        return text;
       }
     }
-    this.showEnd=function(){
-      if(this.progress){
-        if(this.showStatistcs){
-          process.stdout.write('\nstart: '+this.time.start)
-          process.stdout.write('\nfirst: '+this.time.first)
-          process.stdout.write('\nend:   '+this.time.end)
-        }
-        process.stdout.write('\n');
-      }
-    }
+    function reportEnd(text){
 
+      if(this.showStatistcs){
+        text+=('\nstart: '+this.time.start)
+        text+=('\nfirst: '+this.time.first)
+        text+=('\nend:   '+this.time.end)
+      } 
+      
+      return text;
+    }
   }
 })()
