@@ -16,7 +16,7 @@
     "glob"
   ],
   "author": "loureço matheus costa viana",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/lourencomcviana/file-system-pro/issues"
   },
