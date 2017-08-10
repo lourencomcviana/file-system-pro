@@ -9,23 +9,30 @@
       return data;
     },
     progress:function(progress){
-      console.log(progress.report('loading page'))
+      let rep=progress.report('loading page');
+     // process.stdout.write(rep)
+     console.log(rep);
+
     },
     size:20
   }
   ).then(
-    function(data){   
-      data.loadFiles();
-      do{
-        let filesLoaded=[]
-        data.forEach(function(element) {
-          filesLoaded.push(element.name);
-        }, this);
-        console.log('  '+filesLoaded.join(',').substring(0,100)+' ...');
-      }while(data.next());
+    function(arr){   
+      arr.forEach(function(element) {
+        //filesLoaded.push(element.name);
+        //console.log(element.name)
+      }, this);
+      // do{
+      //   let filesLoaded=[]
+      //   data.forEach(function(element) {
+      //     filesLoaded.push(element.name);
+      //   }, this);
+      //   console.log('  '+filesLoaded.join(',').substring(0,100)+' ...');
+      // }while(data.next());
     },
     function(err){
       console.log(err);
     }
   )
+
 })();
