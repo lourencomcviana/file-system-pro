@@ -1,4 +1,5 @@
 (function(){
+    var fs = require('fs');
   var Progress = require("./Progress");
   var FileInfo = require("./FileInfo");
 
@@ -8,6 +9,21 @@
   var formatSymbol= Symbol("function to run when formating file after loading");
   var progressCallbackSymbol = Symbol("progress report callback");
 
+  function readFile(filename,options){
+    
+    return new Promise(function (fulfill, reject){
+      fs.readFile(filename,options, function (err, res){
+        if (err) reject(err);
+        else{ 
+          let info= FileInfo(filename)
+          info.encoding=encoding;
+          info.options=options;
+          info.file=res;
+          fulfill(info);
+        };
+      });
+    });
+  }
   class FilePaging extends Array {
     constructor(files,options) {
         super();
