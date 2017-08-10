@@ -50,6 +50,7 @@
   }
 
   function writeFile(filename,content,options){
+    options=fillOptions({format:'format function'},options)
     
     return new Promise(function (fulfill, reject){
       var info=writeDirRecursive(filename);
@@ -63,16 +64,23 @@
     });
   }
 
-  async function writeFiles(files,formater,progressCallback){
-    progress=new Progress(progressCallback,'escrevendo arquivos')
+  async function writeFiles(files,options){
+    options=fillOptions(
+      {
+        format:'format function',
+        progress:'progress report callback'
+      }
+      ,options)
+
+    progress=new Progress(options.progress,'escrevendo arquivos')
     progress.start(files.length);
     var promisses=[];
 
     for(var id in files){
       progress.run();
       let file=files[id].file;
-      if(formater){
-        file=formater(file)
+      if(options.formater){
+        file=options.formater(file)
       }
       promisses.push(
         writeFile(files[id].filePathStr,file)
@@ -94,88 +102,11 @@
       progress=new Progress(progressCallback,'lendo arquivos')
       glob(globPath, options, function (err, files) {
 
-        function FilePagingOld(files,options){
-          
-          let arr=[];
-
-          arr.paging={
-            size:options.size,
-            total:Math.floor(files.length/100),            
-            current:0,
-            files:files,
-            format:options.format,
-            hasNext:function(){
-              return (arr.paging.current<arr.paging.total)
-            },
-            hasPrevious:function(){
-              return (arr.paging.current>0)
-            }
-          }
-          arr.addFiles = function(files){
-            arr.paging.files.concat(files);
-          }
-
-          console.log(arr)
-          arr.next=function(){
-            if(arr.paging.hasNext()){
-              arr.paging.current++;
-              loadFiles(arr);
-              return true;
-            }
-          }
-          arr.previous=function(){
-            if(arr.paging.hasPrevious()){
-              arr.paging.current--;
-              loadFiles(arr);
-               return true;
-            }
-          }
-
-          function loadFiles(arr){
-            arr.splice(0,arr.length);
-            progress=new Progress(progressCallback,'carregando pagina')
-            progress.start(arr.paging.size);
-
-            let itens=arr.paging.size*arr.paging.current;
-            let maxItens=itens+arr.paging.size;
-            if(maxItens>arr.paging.files.length){
-              maxItens=arr.paging.files.length;
-            }
-                        
-            for(itens;itens<maxItens;itens++){
-
-              let filePackage=FileInfo(arr.paging.files[itens]);
-              filePackage.file=fs.readFileSync(arr.paging.files[itens]);
-              let formatReturn;
-              if(arr.paging.format) {
-                //se format for async?
-                formatReturn=arr.paging.format(filePackage);
-                if(!formatReturn)formatReturn=filePackage;
-                if(formatReturn.then){arr.paging.hasPromise=true;}
-              }else{
-                formatReturn=filePackage;
-              }
-
-              arr.push(formatReturn);
-              progress.run();
-            }
-          }
-          loadFiles(arr);
-          return arr;   
-        }
 
         async function readAllFiles(files){
           var readPromisses=[];
-
-          if(options.exceptions){
-            let newFiles=[];
-            for(var id in files){
-              if(options.exceptions.indexOf(files[id])==-1){
-                newFiles.push(files[id]);
-              }
-            }
-            files=newFiles;
-          }
+          
+          files=removeExceptions(files,options.exceptions)
           
           readPromisses=new FilePaging(files,options);
           return readPromisses;
@@ -188,7 +119,21 @@
     });
   }
 
- 
+  //for to many files, glob exceptions sintax can be pretty slow. 
+  //Thats a simple way to get your huge list of files you don't want to read without 
+  //making glob searching a pain.
+  function removeExceptions(files,exceptions){
+    if(exceptions && exceptions.length>0){
+      let newFiles=[];
+      for(var id in files){
+        if(options.exceptions.indexOf(files[id])==-1){
+          newFiles.push(files[id]);
+        }
+      }
+      return newFiles;
+    }
+    return files;
+  }
 
   function fillOptions(model,source){
     if(source && typeof source =='object'){
