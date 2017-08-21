@@ -4,9 +4,6 @@
   var FileInfo = require("./FileInfo");
   var PagedArray = require("./PagedArray");
 
-  var sizeSymbol = Symbol("size of the page");
-  var currentSymbol= Symbol("current page");
-  var filesSymbol= Symbol("files to read");
  // var formatSymbol= Symbol("function to run when formating file after loading");
   var progressCallbackSymbol = Symbol("progress report callback");
 
